@@ -18,16 +18,23 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <!--Capture the value of the JAVA_HOME environment variable so that we can check for it's existence below.-->
         <jni.java.home>${env.JAVA_HOME}</jni.java.home>
 
+        <!--This is the directory where all the native source code is kept.-->
         <native.dir>src/main/native/</native.dir>
 
+        <!--This is the directory where the compiled native object files will be placed.-->
         <lib.dir>${project.build.directory}/classes/lib/</lib.dir>
+
+        <!--This is the directory where any dependent native header files will be extracted.-->
+        <include.dir>${project.build.directory}/include/</include.dir>
     </properties>
 
     <build>
         <plugins>
             <plugin>
+                <!--Make sure we compile all the Java source as 1.6.-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -39,6 +46,8 @@
             </plugin>
 
             <plugin>
+                <!--Make sure that the JAVA_HOME environment variable has been set.-->
+                <!--This is because we rely on it for some of the directory paths in the Makefile.-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
@@ -61,11 +70,40 @@
             </plugin>
 
             <plugin>
+                <!--Extract the source from the native transcode dependency into the build directory.-->
+                <!--This is done because the native JNI code will need to include the header files.-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <id>src-dependencies</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <!-- use copy-dependencies instead if you don't want to explode the sources -->
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <!--Only unpack the source jar.-->
+                            <classifier>sources</classifier>
+
+                            <!--Only unpack the source for the native transcode dependency.-->
+                            <includeArtifactIds>transcode</includeArtifactIds>
+
+                            <!--The directory where the source will be extracted to.-->
+                            <outputDirectory>${include.dir}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <!--Generate the JNI headers and compile the native code.-->
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>build-native</id>
-                        <phase>process-test-classes</phase>
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
@@ -110,6 +148,12 @@
         <dependency>
             <groupId>org.karlbennett</groupId>
             <artifactId>transcode-interface</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.karlbennett</groupId>
+            <artifactId>transcode</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
