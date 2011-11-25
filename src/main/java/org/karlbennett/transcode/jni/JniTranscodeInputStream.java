@@ -59,6 +59,13 @@ public class JniTranscodeInputStream implements TranscodeInputStream {
      */
     private native int nativeRead(long pointer, byte[] bytes, int off, int len);
 
+    /**
+     * Destroy the native transcode stream by calling it's destructor.
+     *
+     * @param pointer - the reference to the native class.
+     */
+    private native void nativeClose(long pointer);
+
 
     /**
      * Create a transcode input stream that has <code>input</code> as it's source and produces a media file stream with the properties
@@ -92,6 +99,12 @@ public class JniTranscodeInputStream implements TranscodeInputStream {
     public int read(byte[] bytes, int off, int len) throws IOException {
 
         return nativeRead(pointer, bytes, off, len);
+    }
+
+    @Override
+    public void close() throws IOException {
+
+        nativeClose(pointer);
     }
 
     /**
